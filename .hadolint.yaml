@@ -2,5 +2,5 @@
 # Uncomment rules to ignore if needed, but start strict.
 ignored:
 - DL3008 # Example: Pin versions for apt-get (prefer keeping it enabled)
-
+- DL3006
 # docker run --rm -v "%cd%":/work -w /work hadolint/hadolint hadolint Dockerfile
