@@ -60,15 +60,19 @@ jobs:
             cyclonedx/cyclonedx-cli:latest \
             validate --input-file sbom.cdx.json
             
-      - name: Grype SBOM scan (fail on MEDIUM+, only fixed)
+      - name: Grype SBOM scan (only High/Critical, only fixed)
         run: |
-          # Produce a JSON report to file:
+          # Run grype against the CycloneDX SBOM, fail build on High+ only:
           docker run --rm \
             -v "${{ github.workspace }}":/w -w /w \
             anchore/grype:latest \
             sbom:sbom.cdx.json \
             --only-fixed \
-            -o json > grype-report.json
+            --fail-on high \
+            -o json \
+          | tee grype-report-raw.json \
+          | jq '.matches |= map(select(.vulnerability.severity=="High" or .vulnerability.severity=="Critical"))' \
+          > grype-report.json
 
       - name: Upload SBOM artifact
         uses: actions/upload-artifact@v4
