@@ -1,0 +1,11 @@
+docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:0.54.1 image --severity CRITICAL,HIGH --exit-code 1 flaskapp:local
+
+docker run --rm ^
+  -v /var/run/docker.sock:/var/run/docker.sock ^
+  -v %cd%:/w -w /w ^
+  aquasec/trivy:0.54.1 image ^
+  --ignorefile /w/.trivyignore ^
+  --severity CRITICAL,HIGH ^
+  --exit-code 1 ^
+  flaskapp:local
+

@@ -1,0 +1,37 @@
+docker run --rm ^
+  -v /var/run/docker.sock:/var/run/docker.sock ^
+  -v %cd%:/workspace -w /workspace ^
+  aquasec/trivy:0.54.1 image ^
+  --ignorefile /workspace/.trivyignore ^
+  --format cyclonedx ^
+  --scanners vuln ^
+  --output sbom.cdx.json ^
+  flaskapp:local
+
+docker run --rm ^
+  -v /var/run/docker.sock:/var/run/docker.sock ^
+  -v %cd%:/workspace -w /workspace ^
+  aquasec/trivy:0.54.1 image ^
+  --ignorefile /workspace/.trivyignore ^
+  --format cyclonedx ^
+  --scanners vuln ^
+  --output sbom.cdx.json ^
+  --severity CRITICAL,HIGH ^
+  --ignore-unfixed ^
+  --exit-code 1 ^
+  flaskapp:local
+
+docker run --rm -v %cd%:/w -w /w cyclonedx/cyclonedx-cli:latest validate --input-file sbom.cdx.json
+
+docker run --rm -v %cd%:/w -w /w anchore/grype:latest sbom:sbom.cdx.json
+
+docker run --rm ^
+  -v %cd%:/w -w /w ^
+  anchore/grype:latest sbom:sbom.cdx.json ^
+  --fail-on medium
+
+docker run --rm ^
+  -v %cd%:/w -w /w ^
+  anchore/grype:latest sbom:sbom.cdx.json ^
+  --fail-on medium ^
+  --only-fixed

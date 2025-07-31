@@ -1,0 +1,4 @@
+fail-on-severity: high
+
+# Consider only vulns that have a fix available (optional, reduces noise)
+only-fixed: true

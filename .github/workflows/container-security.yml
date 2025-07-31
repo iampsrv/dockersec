@@ -1,0 +1,58 @@
+name: container-security
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+jobs:
+  hadolint-build-scan-sbom:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+      security-events: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Hadolint (lint Dockerfile)
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile
+          config: .hadolint.yaml
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image (load to local Docker for scanning)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          tags: flaskapp:${{ github.sha }}
+          load: true
+          provenance: false
+
+      - name: Trivy image scan (fail on High/Critical)
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          image-ref: flaskapp:${{ github.sha }}
+          format: 'table'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '1'
+
+      - name: Trivy SBOM (CycloneDX)
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          image-ref: flaskapp:${{ github.sha }}
+          format: 'cyclonedx'
+          output: 'sbom.cdx.json'
+
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-cyclonedx
+          path: sbom.cdx.json
