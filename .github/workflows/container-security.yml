@@ -59,10 +59,27 @@ jobs:
             -v "${{ github.workspace }}":/w -w /w \
             cyclonedx/cyclonedx-cli:latest \
             validate --input-file sbom.cdx.json
-      
+            
+      - name: Grype SBOM scan (fail on MEDIUM+, only fixed)
+        run: |
+          # Produce a JSON report to file:
+          docker run --rm \
+            -v "${{ github.workspace }}":/w -w /w \
+            anchore/grype:latest \
+            sbom:sbom.cdx.json \
+            --only-fixed \
+            -o json > grype-report.json
 
       - name: Upload SBOM artifact
         uses: actions/upload-artifact@v4
         with:
           name: sbom-cyclonedx
           path: sbom.cdx.json
+
+      - name: Upload Grype report (JSON)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: grype-report
+          path: grype-report.json
+          if-no-files-found: error
